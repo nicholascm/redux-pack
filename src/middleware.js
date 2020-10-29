@@ -1,12 +1,12 @@
-import uuid from 'uuid';
-import { KEY, LIFECYCLE } from './constants';
+import uuid from "uuid";
+import { KEY, LIFECYCLE } from "./constants";
 
 function isPromise(obj) {
-  return !!obj && typeof obj.then === 'function';
+  return !!obj && typeof obj.then === "function";
 }
 
 function handleEventHook(meta, hook, ...args) {
-  if (meta && meta[hook] && typeof meta[hook] === 'function') {
+  if (meta && meta[hook] && typeof meta[hook] === "function") {
     // we want to make sure that an "eventHook" doesn't cause a dispatch to fail, so we wrap it
     // with a try..catch. In dev, we `console.error` which will result in a redbox.
     try {
@@ -34,9 +34,9 @@ function handlePromise(dispatch, getState, action) {
       [KEY.TRANSACTION]: transactionId,
     },
   });
-  handleEventHook(meta, 'onStart', payload, getState);
+  handleEventHook(meta, "onStart", payload, getState, dispatch);
 
-  const success = data => {
+  const success = (data) => {
     dispatch({
       type,
       payload: data,
@@ -47,12 +47,12 @@ function handlePromise(dispatch, getState, action) {
         [KEY.TRANSACTION]: transactionId,
       },
     });
-    handleEventHook(meta, 'onSuccess', data, getState);
-    handleEventHook(meta, 'onFinish', true, getState);
+    handleEventHook(meta, "onSuccess", data, getState, dispatch);
+    handleEventHook(meta, "onFinish", true, getState, dispatch);
     return { payload: data };
   };
 
-  const failure = error => {
+  const failure = (error) => {
     dispatch({
       type,
       payload: error,
@@ -64,8 +64,8 @@ function handlePromise(dispatch, getState, action) {
         [KEY.TRANSACTION]: transactionId,
       },
     });
-    handleEventHook(meta, 'onFailure', error, getState);
-    handleEventHook(meta, 'onFinish', false, getState);
+    handleEventHook(meta, "onFailure", error, getState, dispatch);
+    handleEventHook(meta, "onFinish", false, getState, dispatch);
     return { error: true, payload: error };
   };
 
@@ -77,7 +77,7 @@ function handlePromise(dispatch, getState, action) {
   return promise.then(success, failure);
 }
 
-const middleware = store => next => action => {
+const middleware = (store) => (next) => (action) => {
   // a common use case for redux-thunk is to conditionally dispatch an action. By allowing for null,
   // we satisfy this use case without people having to use redux-thunk.
   if (action == null) {
@@ -93,6 +93,5 @@ const middleware = store => next => action => {
   // this is the "vanilla redux" pathway. These are plain old actions that will get sent to reducers
   return next(action);
 };
-
 
 module.exports = middleware;
